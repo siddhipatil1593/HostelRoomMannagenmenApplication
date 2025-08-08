@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Room Management</title>
+    <style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(to right, #e0f7fa, #ffffff);
+        margin: 0;
+        padding: 20px;
+    }
+
+    .container {
+        background-color: #ffffff;
+        padding: 30px;
+        border-radius: 12px;
+        max-width: 1000px;
+        margin: auto;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+        text-align: center;
+        color: #006064;
+        margin-bottom: 30px;
+    }
+
+    form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        justify-content: space-between;
+        margin-bottom: 30px;
+    }
+
+    form input,
+    form select {
+        padding: 12px;
+        width: 18%;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        outline: none;
+        transition: border-color 0.3s ease;
+    }
+
+    form input:focus,
+    form select:focus {
+        border-color: #00796b;
+    }
+
+    form button {
+        padding: 12px 25px;
+        background-color: #00796b;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+    }
+
+    form button:hover {
+        background-color: #004d40;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        background-color: #ffffff;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    th {
+        background-color: #0097a7;
+        color: white;
+        padding: 12px;
+    }
+
+    td {
+        padding: 12px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    tr:hover {
+        background-color: #f1f8f9;
+    }
+
+    button.edit, button.delete {
+        padding: 6px 14px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+
+    button.edit:hover,
+    button.delete:hover {
+        transform: scale(1.05);
+    }
+
+    button.edit {
+        background-color: #ffc107;
+        color: black;
+    }
+
+    button.delete {
+        background-color: #e53935;
+        color: white;
+    }
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+
+  background-image: url("https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1600&q=80"));
+  background-size: cover;             
+  background-position: center;
+  background-repeat: no-repeat;
+
+  font-family: Arial, sans-serif;
+}</style>
+
+</head>
+<body>
+<div class="container">
+    <h1>🏨HOSTEL ROOM MANAGEMENT🏨</h1>
+
+    <!-- Room Form -->
+    <form id="roomForm">
+        <input type="hidden" id="roomId">
+        <input type="text" id="roomNumber" placeholder="Room Number" required>
+        <input type="number" id="capacity" placeholder="Capacity" required>
+        <input type="number" id="occupied" placeholder="Occupied" required>
+        <select id="roomType">
+            <option value="AC">AC</option>
+            <option value="Non-AC">Non-AC</option>
+        </select>
+        <button type="submit">Save Room</button>
+    </form>
+
+    <!-- Room Table -->
+    <table id="roomTable">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Room Number</th>
+            <th>Capacity</th>
+            <th>Occupied</th>
+            <th>Type</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Room rows will be inserted here -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const apiUrl = "http://localhost:8585/api/rooms";
+
+    document.addEventListener("DOMContentLoaded", loadRooms);
+
+    document.getElementById("roomForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const room = {
+            roomNumber: document.getElementById("roomNumber").value,
+            capacity: document.getElementById("capacity").value,
+            occupied: document.getElementById("occupied").value,
+            roomType: document.getElementById("roomType").value
+        };
+
+        const roomId = document.getElementById("roomId").value;
+
+        if (roomId) {
+            fetch(`${apiUrl}/${roomId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(room)
+            }).then(() => {
+                loadRooms();
+                document.getElementById("roomForm").reset();
+            });
+        } else {
+            fetch(apiUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(room)
+            }).then(() => {
+                loadRooms();
+                document.getElementById("roomForm").reset();
+            });
+        }
+    });
+
+    function loadRooms() {
+        fetch(apiUrl)
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.querySelector("#roomTable tbody");
+                tbody.innerHTML = "";
+
+                data.forEach(room => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>${room.roomId}</td>
+                        <td>${room.roomNumber}</td>
+                        <td>${room.capacity}</td>
+                        <td>${room.occupied}</td>
+                        <td>${room.roomType}</td>
+                        <td>
+                            <button class="edit" onclick="editRoom(${room.roomId}, '${room.roomNumber}', ${room.capacity}, ${room.occupied}, '${room.roomType}')">Edit</button>
+                            <button class="delete" onclick="deleteRoom(${room.roomId})">Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+    }
+
+    function editRoom(id, number, capacity, occupied, type) {
+        document.getElementById("roomId").value = id;
+        document.getElementById("roomNumber").value = number;
+        document.getElementById("capacity").value = capacity;
+        document.getElementById("occupied").value = occupied;
+        document.getElementById("roomType").value = type;
+    }
+
+    function deleteRoom(id) {
+        fetch(`${apiUrl}/${id}`, { method: "DELETE" })
+            .then(loadRooms);
+    }
+</script>
+</body>
+</html>
+
